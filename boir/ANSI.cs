@@ -44,7 +44,10 @@ namespace SharpLZW
         {
             for (int i = 0; i < 256; i++)
             {
-                table.Add(System.Text.Encoding.Default.GetString(new byte[1] { Convert.ToByte(i) }), i);
+                string k = System.Text.Encoding.GetEncoding(1252).GetString(new byte[1] { Convert.ToByte (i) });
+                if (table.ContainsKey(k))
+                    Console.WriteLine("{0} {1} {2}", k, i, table[k]);
+                table.Add(k, i);
             }
         }
 
