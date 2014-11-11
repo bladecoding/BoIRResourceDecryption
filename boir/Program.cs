@@ -12,7 +12,15 @@ namespace boir
     {
         static void Main(string[] args)
         {
-            var dir = new DirectoryInfo(@"C:\Program Files (x86)\Steam\SteamApps\common\The Binding of Isaac Rebirth\resources\packed");
+            //windows accepts both forward and back slashes, so i will use the ones that work everywhere
+            string steamDir;
+            if (Environment.OSVersion.Platform == PlatformID.Unix)
+                steamDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), ".local/share/Steam");
+            else
+                steamDir = "C:/Program Files (x86)/Steam";
+
+            var dir = new DirectoryInfo(Path.Combine(steamDir, "SteamApps/common/The Binding of Isaac Rebirth/resources/packed"));
+
             foreach (var file in dir.GetFiles("*.a"))
             {
                 using (var fs = File.OpenRead(file.FullName))
