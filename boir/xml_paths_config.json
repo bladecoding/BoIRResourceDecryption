@@ -1,0 +1,56 @@
+{
+	"achievements": {
+		"gfxroot": [ "achievement/@gfx" ]
+	},
+	"babies": {
+		"root": [ "baby/@skin" ]
+	},
+	"backdrops": {
+		"gfxroot": [ "backdrop/@gfx" ]
+	},
+	"bosses": {
+		"root": [ "boss/@portrait", "@anm2" ]
+	},
+	"costumes": {
+		"anm2root": [ "costume/@anm2path" ]
+	},
+	"cutscenes": {
+		"root": [ "cutscene/anm2part/@anm2", "cutscene/videopart/@file" ]
+	},
+	"fxLayers": {
+		"gfxroot": [ "fx/@path", "fx/gfx/@path" ]
+	},
+	"fxRays": {
+		"fxLayers.gfxroot": [ "rayGroup/fxRay/@path" ]
+	},
+	"giantbook": {
+		"anm2root": [ "entry/@anm2", "entry/@gfx" ]
+	},
+	"items": {
+		"gfxroot": [ "passive/@gfx", "active/@gfx", "familiar/@gfx", "trinket/@gfx" ]
+	},
+	"music": {
+		"root": [ "track/@intro", "track/@path", "track/@layerintro", "track/@layer" ]
+	},
+	"nightmares": {
+		"root": [ "nightmare/@anm2", "@progressAnm2" ]
+	},
+	"players": {
+		"root": [ "player/@name", "player/hair/@gfx" ],
+		"portraitroot": [ "player/@portrait" ],
+		"bigportraitroot": [ "player/@bigportrait" ]
+	},
+	"preloads": {
+		"": [ "preload/png/@path" ]
+	},
+	"sounds": {
+		"root": [ "sound/sample/@path" ]
+	},
+	"stages": {
+		"root": [ "stage/@path" ],
+		"bossgfxroot": [ "stage/@playerspot", "stage/@bosspot" ]
+	},
+	"entities": {
+		"anm2root": [ "entity/@anm2path" ]
+	}
+}
