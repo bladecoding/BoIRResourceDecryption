@@ -7,10 +7,11 @@
     <ProjectGuid>{CB780313-059F-4E24-A6E0-531F0F3F67BB}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>boir</RootNamespace>
-    <AssemblyName>boir</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <RootNamespace>BoIRResourceEditor</RootNamespace>
+    <AssemblyName>BoIRResourceEditor</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -42,17 +43,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ANSI.cs" />
-    <Compile Include="BitReader.cs" />
-    <Compile Include="ExtensionMethods.cs" />
-    <Compile Include="LZWDecoder.cs" />
-    <Compile Include="LZWEncoder.cs" />
+    <Compile Include="LZW\LZWDecoder.cs" />
+    <Compile Include="LZW\LZWEncoder.cs" />
+    <Compile Include="LZW\LZWLookup.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="StreamExt.cs" />
+    <Compile Include="Util\BitReader.cs" />
+    <Compile Include="Util\BitWriter.cs" />
+    <Compile Include="Util\StreamExt.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="BoIRResourceEditor.licenseheader" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
