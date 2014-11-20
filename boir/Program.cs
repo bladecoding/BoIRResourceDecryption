@@ -58,10 +58,21 @@ namespace boir
                     {
                         var fileName = (hashToFilename.ContainsKey(p.Hash)) ? hashToFilename[p.Hash] : "nothing";
                         Console.WriteLine("Found for hash {0} file name {1}", p.Hash, fileName);
-                        if (fileName != "nothing")
-                            found++;
+
                         total++;
-                        //TODO: save file
+
+                        string filePath;
+                        if (fileName != "nothing") {
+                            found++;
+                            filePath = fileName;
+                        }
+                        else
+                        {
+                            string ext = (TextUtil.IsText(p.Data)) ? ".xml" : ".png";
+                            filePath = Path.Combine(file.Name, (total - found) + ext);
+                        }
+                        Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+                        File.WriteAllBytes(filePath, p.Data);
                     }
                 }
             }
@@ -136,13 +147,17 @@ namespace boir
             while (!reader.EOF) {
                 reader.MoveToContent();
                 XmlDocument doc = new XmlDocument();
-                try {
-                    while (reader.NodeType != XmlNodeType.Element) {
+                try
+                {
+                    while (reader.NodeType != XmlNodeType.Element)
+                    {
                         if (!reader.Read())
                             yield break;
                     }
                     doc.Load(reader.ReadSubtree());
-                } catch (XmlException) {
+                }
+                catch (XmlException)
+                {
                     Console.WriteLine("Failed to load XML: {0}...", reader.ReadContentAsString());
                     yield break;
                 }
@@ -164,6 +179,8 @@ namespace boir
             }
             return ret;
         }
+
+
     }
 
     public class FileReader

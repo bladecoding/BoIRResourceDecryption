@@ -57,6 +57,7 @@
     <Compile Include="Util\BitReader.cs" />
     <Compile Include="Util\BitWriter.cs" />
     <Compile Include="Util\StreamExt.cs" />
+    <Compile Include="Util\TextUtil.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
