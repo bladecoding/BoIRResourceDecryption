@@ -25,6 +25,7 @@ using System.Text;
 using System.Xml;
 using System.Threading.Tasks;
 using System.Reflection;
+using Microsoft.Win32;
 using Newtonsoft.Json;
 
 namespace boir
@@ -38,7 +39,7 @@ namespace boir
             if (Environment.OSVersion.Platform == PlatformID.Unix)
                 steamDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), ".local/share/Steam");
             else
-                steamDir = "C:/Program Files (x86)/Steam";
+                steamDir = (string)Registry.GetValue(@"HKEY_CURRENT_USER\Software\Valve\Steam", "SteamPath", "C:/Program Files (x86)/Steam");
 
             var dir = new DirectoryInfo(Path.Combine(steamDir, "SteamApps/common/The Binding of Isaac Rebirth/resources/packed"));
 
