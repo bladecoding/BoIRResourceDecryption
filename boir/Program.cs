@@ -213,6 +213,7 @@ namespace boir
         PNG,
         OGG,
         OGV,
+        WAV,
         BIN, //some unknown binary type
         XML,
         TXT,
@@ -258,7 +259,8 @@ namespace boir
 
 			if (Encoding.ASCII.GetString(Data.Take(4).ToArray()) == "OggS")
             {
-                if (Encoding.ASCII.GetString(Data.Skip(0x57).Take(6).ToArray()) == "theora")
+                if (Encoding.ASCII.GetString(Data.Skip(0x1D).Take(6).ToArray()) == "theora" ||
+                    Encoding.ASCII.GetString(Data.Skip(0x57).Take(6).ToArray()) == "theora")
                 {
                     return RecordType.OGV;
                 }
@@ -266,6 +268,12 @@ namespace boir
                 {
                     return RecordType.OGG;
                 }
+            }
+
+            if (Encoding.ASCII.GetString(Data        .Take(4).ToArray()) == "RIFF" &&
+                Encoding.ASCII.GetString(Data.Skip(8).Take(4).ToArray()) == "WAVE")
+            {
+                return RecordType.WAV;
             }
 
             if (Data.Take(8).SequenceEqual(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }))
