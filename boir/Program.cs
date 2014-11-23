@@ -241,9 +241,8 @@ namespace boir
             {
                 return RecordType.XML;
             }
-            byte[] subarray = Data.Take(64).ToArray();
 
-            if (Encoding.Default.GetString(subarray).ToLower().Contains("ogg"))
+			if (Encoding.ASCII.GetString(Data.Take(4).ToArray()) == "OggS")
             {
                 return RecordType.OGG;
             }
