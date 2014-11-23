@@ -36,8 +36,12 @@ namespace boir
         {
             //windows accepts both forward and back slashes, so i will use the ones that work everywhere
             string steamDir;
-            if (Environment.OSVersion.Platform == PlatformID.Unix)
-                steamDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), ".local/share/Steam");
+			string homeDir = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+
+			if (Environment.OSVersion.Platform == PlatformID.Unix)
+				steamDir = Path.Combine(homeDir, ".local/share/Steam");
+			else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
+				steamDir = Path.Combine(homeDir, "Library/Application Support/Steam");
             else
                 steamDir = (string)Registry.GetValue(@"HKEY_CURRENT_USER\Software\Valve\Steam", "SteamPath", "C:/Program Files (x86)/Steam");
 
