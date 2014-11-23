@@ -25,6 +25,7 @@ using System.Text;
 using System.Xml;
 using System.Threading.Tasks;
 using System.Reflection;
+using Microsoft.Win32;
 using Newtonsoft.Json;
 
 namespace boir
@@ -38,7 +39,7 @@ namespace boir
             if (Environment.OSVersion.Platform == PlatformID.Unix)
                 steamDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), ".local/share/Steam");
             else
-                steamDir = "C:/Program Files (x86)/Steam";
+                steamDir = (string)Registry.GetValue(@"HKEY_CURRENT_USER\Software\Valve\Steam", "SteamPath", "C:/Program Files (x86)/Steam");
 
             var dir = new DirectoryInfo(Path.Combine(steamDir, "SteamApps/common/The Binding of Isaac Rebirth/resources/packed"));
 
@@ -67,9 +68,8 @@ namespace boir
                             filePath = fileName;
                         }
                         else
-                        {
-                            string ext = (TextUtil.IsText(p.Data)) ? ".xml" : ".png";
-                            filePath = Path.Combine(file.Name, (total - found) + ext);
+                        {                            
+                            filePath = Path.Combine(file.Name, (total - found) + "." + p.RecordType.ToString().ToLower());
                         }
                         Directory.CreateDirectory(Path.GetDirectoryName(filePath));
                         File.WriteAllBytes(filePath, p.Data);
@@ -204,14 +204,24 @@ namespace boir
         }
     }
 
-    public abstract class Record {
+    public enum RecordType
+    {
+        PNG,
+        OGG,
+        XML
+    }
+
+    public abstract class Record
+    {
+        public RecordType RecordType { get; set; }
         public byte[] Data { get; set; }
         public uint Hash { get; set; }
         public abstract byte[] Decompress(Stream s, int dataLen, uint key);
+
         public void Read(Stream s)
         {
             Hash = s.ReadUInt32();
-            var key = (uint)(s.ReadInt32() ^ 0xF9524287 | 1);
+            var key = (uint) (s.ReadInt32() ^ 0xF9524287 | 1);
             var dataStart = s.ReadInt32();
             var dataLen = s.ReadInt32();
             var _un = s.ReadInt32();
@@ -220,8 +230,25 @@ namespace boir
             s.Position = dataStart;
 
             Data = Decompress(s, dataLen, key);
+            RecordType = DetermineRecordType();
 
             s.Position = o;
+        }
+
+        private RecordType DetermineRecordType()
+        {
+            if (TextUtil.IsText(Data))
+            {
+                return RecordType.XML;
+            }
+            byte[] subarray = Data.Take(64).ToArray();
+
+            if (Encoding.Default.GetString(subarray).ToLower().Contains("ogg"))
+            {
+                return RecordType.OGG;
+            }
+
+            return RecordType.PNG;
         }
     }
 
