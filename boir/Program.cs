@@ -212,7 +212,10 @@ namespace boir
     {
         PNG,
         OGG,
-        XML
+        OGV,
+        BIN, //some unknown binary type
+        XML,
+        TXT,
     }
 
     public abstract class Record
@@ -243,15 +246,34 @@ namespace boir
         {
             if (TextUtil.IsText(Data))
             {
-                return RecordType.XML;
+                if (Data[0] == '<')
+                {
+                    return RecordType.XML;
+                }
+                else
+                {
+                    return RecordType.TXT;
+                }
             }
 
 			if (Encoding.ASCII.GetString(Data.Take(4).ToArray()) == "OggS")
             {
-                return RecordType.OGG;
+                if (Encoding.ASCII.GetString(Data.Skip(0x57).Take(6).ToArray()) == "theora")
+                {
+                    return RecordType.OGV;
+                }
+                else
+                {
+                    return RecordType.OGG;
+                }
             }
 
-            return RecordType.PNG;
+            if (Data.Take(8).SequenceEqual(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }))
+            {
+                return RecordType.PNG;
+            }
+
+            return RecordType.BIN;
         }
     }
 
