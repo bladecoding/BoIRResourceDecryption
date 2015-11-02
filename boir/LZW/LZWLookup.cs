@@ -23,7 +23,7 @@ using System.Linq;
 using System.Text;
 class LookupTable
 {
-    public List<LookupRecord> Records = Enumerable.Range(0, 10001).Select(i => new LookupRecord { Character = i < 256 ? (byte)i : (byte)0 }).ToList();
+    public List<LookupRecord> Records = Enumerable.Range(0, 0x1001).Select(i => new LookupRecord { Character = i < 256 ? (byte)i : (byte)0 }).ToList();
     int RecordsIndex = 0x100;
     public int CodeLen = 8;
     public byte OutputText(byte lastChar, int index, Stream s)
@@ -88,7 +88,8 @@ class LookupTable
     public void Reset()
     {
         RecordsIndex = 0x100;
-        CodeLen = 8;
+        CodeLen = 8; 
+        Records = Enumerable.Range(0, 0x1001).Select(i => new LookupRecord { Character = i < 256 ? (byte)i : (byte)0 }).ToList();
     }
 
     public int Count { get { return RecordsIndex; } }

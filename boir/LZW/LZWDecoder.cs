@@ -45,31 +45,31 @@ public class LZWDecoder
         {
             var br = new BitReader(stream);
 
-            int value;
             int i = 0;
             int prevValue = -1;
             byte lastChar = 0;
 
-            if (br.BitsRead + lookup.CodeLen <= br.BitsLength)
-            {
-                value = br.ReadBits(lookup.CodeLen);
-                lastChar = lookup.OutputText(lastChar, value, ms);
-                prevValue = value;
-            }
+            prevValue = br.ReadBits(lookup.CodeLen);
+            lastChar = lookup.OutputText(lastChar, prevValue, ms);
 
             while (br.BitsRead < br.BitsLength)
             {
                 if (lookup.Count >= 0xFFF)
                 {
-                    lookup.Reset();
                     if (br.BitsRead + lookup.CodeLen <= br.BitsLength)
                     {
-                        value = br.ReadBits(lookup.CodeLen);
-                        lastChar = lookup.OutputText(lastChar, value, ms);
-                        prevValue = value;
+                        lookup.Reset();
+                        prevValue = br.ReadBits(lookup.CodeLen);
+                        lastChar = lookup.OutputText(lastChar, prevValue, ms);
                     }
+                    else
+                    {
+                        break;
+                    }
+                    continue;
                 }
 
+                int value;
                 if (br.BitsRead + lookup.CodeLen <= br.BitsLength)
                 {
                     lookup.EnsureCodeLen();
@@ -83,11 +83,13 @@ public class LZWDecoder
                 if (value != lookup.Count)
                 {
                     lastChar = lookup.OutputText(lastChar, value, ms);
-                    lookup.AppendChar(lastChar, prevValue);
+                    if (prevValue != -1)
+                        lookup.AppendChar(lastChar, prevValue);
                 }
                 else
                 {
-                    lookup.AppendChar(lastChar, prevValue);
+                    if (prevValue != -1)
+                        lookup.AppendChar(lastChar, prevValue);
                     lastChar = lookup.OutputText(lastChar, value, ms);
                 }
 
