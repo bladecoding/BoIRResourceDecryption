@@ -25,23 +25,28 @@ using System.Text;
 using System.Xml;
 using System.Threading.Tasks;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using Microsoft.Win32;
 using Newtonsoft.Json;
+using Org.BouncyCastle.Crypto.Engines;
+using Org.BouncyCastle.Crypto.Parameters;
 
 namespace boir
 {
-    class Program
+    public class Program
     {
         static void Main(string[] args)
         {
+
+
             //windows accepts both forward and back slashes, so i will use the ones that work everywhere
             string steamDir;
-			string homeDir = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+            string homeDir = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
 
-			if (Environment.OSVersion.Platform == PlatformID.Unix)
-				steamDir = Path.Combine(homeDir, ".local/share/Steam");
-			else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
-				steamDir = Path.Combine(homeDir, "Library/Application Support/Steam");
+            if (Environment.OSVersion.Platform == PlatformID.Unix)
+                steamDir = Path.Combine(homeDir, ".local/share/Steam");
+            else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
+                steamDir = Path.Combine(homeDir, "Library/Application Support/Steam");
             else
                 steamDir = (string)Registry.GetValue(@"HKEY_CURRENT_USER\Software\Valve\Steam", "SteamPath", "C:/Program Files (x86)/Steam");
 
@@ -67,12 +72,13 @@ namespace boir
                         total++;
 
                         string filePath;
-                        if (fileName != "nothing") {
+                        if (fileName != "nothing")
+                        {
                             found++;
                             filePath = fileName;
                         }
                         else
-                        {                            
+                        {
                             filePath = Path.Combine(file.Name, (total - found) + "." + p.RecordType.ToString().ToLower());
                         }
                         Directory.CreateDirectory(Path.GetDirectoryName(filePath));
@@ -83,22 +89,23 @@ namespace boir
             Console.WriteLine("Found {0} of {1}", found, total);
         }
 
-        static Dictionary<uint, string> GetFileNames(string configFilePath) {
+        static Dictionary<uint, string> GetFileNames(string configFilePath)
+        {
             var assembly = Assembly.GetExecutingAssembly();
             string result;
-            
+
             using (Stream stream = assembly.GetManifestResourceStream("BoIRResourceEditor.xml_paths_config.json"))
-                using (StreamReader reader = new StreamReader(stream))
-                {
-                    result = reader.ReadToEnd();
-                }
+            using (StreamReader reader = new StreamReader(stream))
+            {
+                result = reader.ReadToEnd();
+            }
 
             var spec = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, List<string>>>>(result);
 
             var ret = new Dictionary<uint, string>();
 
             using (var fs = File.OpenRead(configFilePath))
-                foreach(var rec in new FileReader().Read(fs))
+                foreach (var rec in new FileReader().Read(fs))
                 {
                     var xml = System.Text.Encoding.UTF8.GetString(rec.Data);
 
@@ -113,12 +120,17 @@ namespace boir
                         {
                             var rootAttrName = subEntry.Key;
                             string rootPath;
-                            if (rootAttrName == "") {
+                            if (rootAttrName == "")
+                            {
                                 rootPath = "";
-                            } else if (rootAttrName.Contains(".")) {
+                            }
+                            else if (rootAttrName.Contains("."))
+                            {
                                 continue;
                                 //TODO: handle fxRays
-                            } else {
+                            }
+                            else
+                            {
                                 rootPath = doc.SelectSingleNode(rootNodeName + "/@" + rootAttrName).Value;
                             }
 
@@ -143,12 +155,14 @@ namespace boir
             return ret;
         }
 
-        static IEnumerable<XmlDocument> ReadAllDocuments(TextReader stream) {
+        static IEnumerable<XmlDocument> ReadAllDocuments(TextReader stream)
+        {
             XmlReaderSettings settings = new XmlReaderSettings();
             settings.ConformanceLevel = ConformanceLevel.Fragment;
 
             var reader = XmlReader.Create(stream, settings);
-            while (!reader.EOF) {
+            while (!reader.EOF)
+            {
                 reader.MoveToContent();
                 XmlDocument doc = new XmlDocument();
                 try
@@ -172,7 +186,7 @@ namespace boir
         static uint Hash1(string str)
         {
             uint ret = 0x1505;
-            for(int i = 0; i < str.Length; i++)
+            for (int i = 0; i < str.Length; i++)
             {
                 byte c = (byte)str[i];
                 if ((byte)(c - 0x41) <= 0x19)
@@ -193,19 +207,38 @@ namespace boir
         {
             if (Encoding.ASCII.GetString(s.ReadBytes(7)) != "ARCH000")
                 throw new NotSupportedException("Not a boir file");
-            var compressed = s.ReadBoolean();
+            var compressed = s.ReadByte();
             var recordStart = s.ReadInt32();
             var recordCount = s.ReadInt16();
 
             s.Position = recordStart;
             for (int i = 0; i < recordCount; i++)
             {
-                Record rec = (compressed) ? (Record)new CompressedRecord() : new EncryptedRecord();
+                Record rec = null;
+                switch ((FileType)compressed)
+                {
+                    case FileType.Compressed:
+                        rec = (Record)new CompressedRecord();
+                        break;
+                    case FileType.Encrypted:
+                        rec = new EncryptedRecord();
+                        break;
+                    case FileType.Encrypted2:
+                        rec = new MiniZCompressedRecord();
+                        break;
+                }
                 rec.Read(s);
 
                 yield return rec;
             }
         }
+    }
+
+    public enum FileType
+    {
+        Encrypted = 0,
+        Compressed = 1,
+        Encrypted2 = 2,
     }
 
     public enum RecordType
@@ -230,7 +263,7 @@ namespace boir
         public void Read(Stream s)
         {
             Hash = s.ReadUInt32();
-            var key = (uint) (s.ReadInt32() ^ 0xF9524287 | 1);
+            var key = (uint)(s.ReadInt32());
             var dataStart = s.ReadInt32();
             var dataLen = s.ReadInt32();
             var _un = s.ReadInt32();
@@ -242,6 +275,11 @@ namespace boir
             RecordType = DetermineRecordType();
 
             s.Position = o;
+        }
+
+        protected uint XorKey(uint key)
+        {
+            return key ^ 0xF9524287 | 1;
         }
 
         private RecordType DetermineRecordType()
@@ -258,7 +296,7 @@ namespace boir
                 }
             }
 
-			if (Encoding.ASCII.GetString(Data.Take(4).ToArray()) == "OggS")
+            if (Encoding.ASCII.GetString(Data.Take(4).ToArray()) == "OggS")
             {
                 if (Encoding.ASCII.GetString(Data.Skip(0x1D).Take(6).ToArray()) == "theora" ||
                     Encoding.ASCII.GetString(Data.Skip(0x57).Take(6).ToArray()) == "theora")
@@ -271,7 +309,7 @@ namespace boir
                 }
             }
 
-            if (Encoding.ASCII.GetString(Data        .Take(4).ToArray()) == "RIFF" &&
+            if (Encoding.ASCII.GetString(Data.Take(4).ToArray()) == "RIFF" &&
                 Encoding.ASCII.GetString(Data.Skip(8).Take(4).ToArray()) == "WAVE")
             {
                 return RecordType.WAV;
@@ -291,7 +329,7 @@ namespace boir
         }
     }
 
-    public class CompressedRecord: Record
+    public class CompressedRecord : Record
     {
         public override byte[] Decompress(Stream s, int dataLen, uint key)
         {
@@ -307,10 +345,11 @@ namespace boir
         }
     }
 
-    public class EncryptedRecord: Record
+    public class EncryptedRecord : Record
     {
         public unsafe override byte[] Decompress(Stream s, int dataLen, uint key)
         {
+            key = XorKey(key);
             var data = s.ReadBytes(dataLen);
 
             var origSize = data.Length;
@@ -373,4 +412,105 @@ namespace boir
             *b2 = t;
         }
     }
+
+    public class MiniZCompressedRecord : Record
+    {
+        [DllImport("MiniZLib.dll", EntryPoint = "tinfl_decompress_mem_to_mem", CallingConvention = CallingConvention.Cdecl)]
+        unsafe extern static int tinfl_decompress_mem_to_mem(
+            byte* pOut_buf,
+            int* out_buf_len,
+            byte* pSrc_buf,
+                int src_buf_len,
+                int flags
+            );
+        public static unsafe byte[] DecompressMem(byte[] src)
+        {
+            var dst = new byte[0x400];
+            var len = dst.Length;
+
+            fixed (byte* srcPtr = src)
+            fixed (byte* dstPtr = dst)
+            {
+                //Todo error checking.
+                //miniz seems to return -1 even on successful decompress.
+                //1 check is probably to see if the returned length is 0.
+                var err = tinfl_decompress_mem_to_mem(dstPtr, &len, srcPtr, src.Length, 2);
+            }
+            Array.Resize(ref dst, len);
+            return dst;
+
+        }
+
+        //double multiply on 32bit systems
+        /*ulong Multiply(uint a, uint b, uint c, uint d)
+        {
+            if (b == 0 || d == 0)
+                return (uint)(a * c);
+            return ((ulong)a * c) + ((ulong)((b * c) + (a * d)) << 32);
+
+        }*/
+
+        //Still kind of a mess. First time manually decompiling int64 arithmetic.
+        byte[] Generate128BitKey(uint seed)
+        {
+            var key = new byte[0x400];
+
+            ulong a = seed;
+            ulong b = (((seed << 15) ^ seed) << 8) ^ (seed >> 9) ^ seed;
+
+            ulong newSeed = a << 32 | b;
+
+
+            for (int i = 0; i < key.Length; i += 4)
+            {
+
+                var num = newSeed >> 27 ^ (newSeed >> 45);
+                var high = (uint)(num >> 32);
+                var low = (uint)(num);
+                var left = (uint)low << (-(int)high & 0x1F);
+                var right = (uint)low >> (byte)(high);
+
+                //replace this with bc pack helper.
+                BitConverter.GetBytes(left | right).CopyTo(key, i);
+
+                newSeed = (newSeed * 0x5851F42D4C957F2D) + 0x7F;
+            }
+            return key;
+        }
+
+        public unsafe override byte[] Decompress(Stream s, int dataLen, uint key)
+        {
+            var isc = new IsaacCipher();
+            isc.Init(false, new KeyParameter(Generate128BitKey(key)));
+
+            var sb = new List<byte>();
+            var isEnc = false;
+            while (sb.Count < dataLen)
+            {
+                var olen = s.ReadInt32();
+                var len = olen & 0x7fffffff;
+                var bytes = s.ReadBytes(len);
+                var isCompressed = (olen >> 31) != 0;
+
+                if (!isEnc && !isCompressed)
+                {
+                    isEnc = len == 0x400;
+                }
+
+                if (isEnc)
+                {
+                    var ret = new byte[bytes.Length];
+                    isc.ProcessBytes(bytes, 0, bytes.Length, ret, 0);
+                    sb.AddRange(ret);
+                }
+                else
+                {
+                    sb.AddRange(DecompressMem(bytes));
+                }
+            }
+
+            return sb.ToArray();
+        }
+    }
+
 }
